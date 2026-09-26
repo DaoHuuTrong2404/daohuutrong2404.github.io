@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DTrongVIP 3D Interactive Cybernetic Space | Đào Hữu Trọng</title>
+  <meta name="description" content="Không gian 3D tương tác xoay 360 độ của Đào Hữu Trọng (DTrongVIP) - Sinh viên Trí tuệ Nhân tạo Đại học Cần Thơ">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="DTrongVIP 3D Cybernetic Space | Đào Hữu Trọng">
+  <meta property="og:description" content="Trải nghiệm 3D tương tác xoay chuột 360 độ với Three.js & AI Core">
+  <meta property="og:image" content="./banner_3d_ai.jpg">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <!-- Three.js and GSAP via CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #07090e;
+      --cyan: #00f0ff;
+      --orange: #ff8c00;
+      --purple: #9d4edd;
+      --green: #00df89;
+      --glass: rgba(14, 18, 30, 0.7);
+      --border: rgba(255, 255, 255, 0.1);
+      --font-sans: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: #f0f4fc;
+      font-family: var(--font-sans);
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #webgl-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      cursor: grab;
+    }
+
+    #webgl-canvas:active {
+      cursor: grabbing;
+    }
+
+    /* Glassmorphic UI Overlays */
+    .hud-layer {
+      position: fixed;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .hud-layer * {
+      pointer-events: auto;
+    }
+
+    /* Top Navigation Bar */
+    .top-bar {
+      top: 20px;
+      left: 20px;
+      right: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .brand-box {
+      background: var(--glass);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 12px var(--cyan);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.3); }
+    }
+
+    .brand-title {
+      font-weight: 800;
+      font-size: 1.05rem;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #fff 0%, var(--cyan) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-sub {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      font-family: var(--font-mono);
+    }
+
+    .nav-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .hud-btn {
+      background: var(--glass);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: #f8fafc;
+      padding: 10px 16px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      text-decoration: none;
+    }
+
+    .hud-btn:hover {
+      border-color: var(--cyan);
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .hud-btn.active {
+      background: rgba(0, 240, 255, 0.15);
+      border-color: var(--cyan);
+      color: var(--cyan);
+    }
+
+    /* Bottom Instructions Tooltip */
+    .bottom-hint {
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--glass);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 30px;
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 0.8rem;
+      color: #cbd5e1;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+      white-space: nowrap;
+    }
+
+    .hint-chip {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--cyan);
+    }
+
+    /* Interactive Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(5, 7, 12, 0.75);
+      backdrop-filter: blur(12px);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      padding: 20px;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background: #0d111a;
+      border: 1px solid var(--cyan);
+      box-shadow: 0 0 50px rgba(0, 240, 255, 0.25);
+      border-radius: 24px;
+      width: 100%;
+      max-width: 520px;
+      padding: 32px;
+      position: relative;
+      transform: scale(0.92);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .modal-overlay.open .modal-card {
+      transform: scale(1);
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.06);
+      border: none;
+      color: #94a3b8;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .modal-close:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+    }
+
+    .modal-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .modal-title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 12px;
+      color: #f8fafc;
+    }
+
+    .modal-desc {
+      font-size: 0.92rem;
+      color: #94a3b8;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    .modal-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+
+    .modal-tag {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+      color: #cbd5e1;
+    }
+
+    .modal-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--cyan);
+      color: #07090e;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 0.88rem;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .modal-action:hover {
+      box-shadow: 0 0 20px var(--cyan);
+      transform: translateY(-2px);
+    }
+
+    /* Floating Labels in 3D */
+    .cube-tooltip {
+      position: absolute;
+      background: rgba(10, 14, 24, 0.85);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--cyan);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+      color: var(--cyan);
+      pointer-events: none;
+      transform: translate(-50%, -100%);
+      margin-top: -12px;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      white-space: nowrap;
+      z-index: 20;
+    }
+
+    @media (max-width: 768px) {
+      .top-bar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .bottom-hint {
+        font-size: 0.72rem;
+        padding: 8px 16px;
+        width: 90%;
+        text-align: center;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- WebGL 3D Canvas -->
+  <canvas id="webgl-canvas"></canvas>
+
+  <!-- Top Navigation HUD -->
+  <div class="hud-layer top-bar">
+    <div class="brand-box">
+      <div class="status-dot"></div>
+      <div>
+        <div class="brand-title">DTrongVIP 3D CYBERNETIC SPACE</div>
+        <div class="brand-sub">ĐÀO HỮU TRỌNG • AI CTU K52</div>
+      </div>
+    </div>
+    
+    <div class="nav-actions">
+      <button class="hud-btn" id="btn-audio" title="Bật/Tắt âm thanh công nghệ">🔊 Sound: ON</button>
+      <button class="hud-btn active" id="btn-autorotate" title="Bật/Tắt tự động xoay">🔄 Auto-Rotate</button>
+      <button class="hud-btn" id="btn-burst" title="Kích hoạt nổ hạt ánh sáng">✨ Particle Burst</button>
+      <a class="hud-btn" href="https://github.com/DaoHuuTrong2404" target="_blank" rel="noopener">⚡ GitHub</a>
+    </div>
+  </div>
+
+  <!-- Bottom Instructions Hint -->
+  <div class="hud-layer bottom-hint">
+    <span><span class="hint-chip">🖱️ KÉO CHUỘT</span> để xoay 360° tự do</span>
+    <span><span class="hint-chip">LĂN CHUỘT</span> phóng to/thu nhỏ</span>
+    <span><span class="hint-chip">CLICK KHỐI HỘP</span> khám phá chi tiết</span>
+  </div>
+
+  <!-- Floating 3D Hover Tooltip -->
+  <div id="hover-tooltip" class="cube-tooltip">AI Core</div>
+
+  <!-- Detail Information Modal -->
+  <div class="modal-overlay" id="info-modal">
+    <div class="modal-card">
+      <button class="modal-close" id="modal-close">&times;</button>
+      <div class="modal-badge" id="modal-badge" style="background: rgba(0,240,255,0.15); color: var(--cyan);">AI MODULE</div>
+      <h2 class="modal-title" id="modal-title">Tiêu đề</h2>
+      <p class="modal-desc" id="modal-desc">Mô tả chi tiết</p>
+      <div class="modal-tags" id="modal-tags"></div>
+      <a class="modal-action" id="modal-link" href="https://github.com/DaoHuuTrong2404" target="_blank">Xem trên GitHub &rarr;</a>
+    </div>
+  </div>
+
+  <!-- Three.js Interactive 3D Engine -->
+  <script>
+    // --- 1. Audio Synthesizer (Zero Dependencies Web Audio API) ---
+    const AudioEngine = {
+      enabled: true,
+      ctx: null,
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) this.ctx = new AudioContext();
+        }
+      },
+      beep(freq = 440, type = 'sine', duration = 0.1, gainVal = 0.08) {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+          gain.gain.setValueAtTime(gainVal, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + duration);
+        } catch (e) {}
+      },
+      hover() { this.beep(780, 'triangle', 0.08, 0.04); },
+      click() {
+        this.beep(520, 'sine', 0.15, 0.09);
+        setTimeout(() => this.beep(880, 'sine', 0.2, 0.07), 60);
+      },
+      burst() {
+        this.beep(220, 'sawtooth', 0.3, 0.08);
+        setTimeout(() => this.beep(660, 'sine', 0.25, 0.05), 100);
+      }
+    };
+
+    // --- 2. Setup Three.js Scene, Camera, Renderer ---
+    const canvas = document.getElementById('webgl-canvas');
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x07090e, 0.035);
+
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 3, 10);
+
+    const renderer = new THREE.WebGLRenderer({
+      canvas,
+      antialias: true,
+      alpha: true,
+      powerPreference: 'high-performance'
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
+
+    // --- 3. OrbitControls (360 Degree Drag Rotation) ---
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.maxDistance = 22;
+    controls.minDistance = 3.5;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 0.8;
+    controls.enablePan = false;
+
+    // --- 4. Lights ---
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+
+    const pointLightCore = new THREE.PointLight(0x00f0ff, 2.5, 20);
+    pointLightCore.position.set(0, 0, 0);
+    scene.add(pointLightCore);
+
+    const dirLightTop = new THREE.DirectionalLight(0xff8c00, 1.2);
+    dirLightTop.position.set(5, 10, 5);
+    scene.add(dirLightTop);
+
+    const dirLightBottom = new THREE.DirectionalLight(0x9d4edd, 1.0);
+    dirLightBottom.position.set(-5, -8, -5);
+    scene.add(dirLightBottom);
+
+    // --- 5. Central 3D AI Core (Glowing Polyhedron with Wireframe) ---
+    const coreGroup = new THREE.Group();
+
+    // Inner glowing core
+    const innerGeo = new THREE.IcosahedronGeometry(1.6, 0);
+    const innerMat = new THREE.MeshStandardMaterial({
+      color: 0x050b14,
+      emissive: 0x00f0ff,
+      emissiveIntensity: 0.6,
+      roughness: 0.1,
+      metalness: 0.9,
+      wireframe: false
+    });
+    const innerMesh = new THREE.Mesh(innerGeo, innerMat);
+    coreGroup.add(innerMesh);
+
+    // Inner wireframe gold
+    const wireGeo = new THREE.IcosahedronGeometry(1.62, 1);
+    const wireMat = new THREE.MeshBasicMaterial({
+      color: 0xffb703,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.75
+    });
+    const wireMesh = new THREE.Mesh(wireGeo, wireMat);
+    coreGroup.add(wireMesh);
+
+    // Outer refractive glass shell
+    const outerGeo = new THREE.IcosahedronGeometry(2.1, 0);
+    const outerMat = new THREE.MeshPhysicalMaterial({
+      color: 0x00f0ff,
+      transmission: 0.8,
+      opacity: 0.9,
+      transparent: true,
+      roughness: 0.1,
+      ior: 1.5,
+      thickness: 1.5,
+      wireframe: false
+    });
+    const outerMesh = new THREE.Mesh(outerGeo, outerMat);
+    coreGroup.add(outerMesh);
+
+    // Outer cage wireframe
+    const cageGeo = new THREE.IcosahedronGeometry(2.12, 0);
+    const cageMat = new THREE.MeshBasicMaterial({
+      color: 0x00f0ff,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.4
+    });
+    const cageMesh = new THREE.Mesh(cageGeo, cageMat);
+    coreGroup.add(cageMesh);
+
+    scene.add(coreGroup);
+
+    // --- 6. Interactive Orbiting 3D Cubes (DTrongVIP Tech Weaponry) ---
+    const modulesData = [
+      {
+        id: "cua-agents",
+        title: "Autonomous Agents & CUA 2.0",
+        badge: "AUTONOMOUS SYSTEM",
+        color: 0x00f0ff,
+        emissive: 0x0080ff,
+        desc: "Hệ thống tác tử AI tự trị điều khiển máy tính (Computer-Use Agent 2.0), tương tác click chuột, gõ phím desktop, cào phụ đề video mạng xã hội qua Agent-Reach và tự động hóa quy trình không cần API.",
+        tags: ["OpenHands SDK", "CUA 2.0", "Agent-Reach", "Playwright", "Autonomous Loops"],
+        link: "https://github.com/DaoHuuTrong2404/dtrongvip-toolkit"
+      },
+      {
+        id: "deep-learning",
+        title: "Deep Learning & Vision AI",
+        badge: "CORE RESEARCH",
+        color: 0x9d4edd,
+        emissive: 0x7209b7,
+        desc: "Nghiên cứu thị giác máy tính (Computer Vision), xử lý ngôn ngữ tự nhiên, kỹ thuật Directional Ablation (Heretic abliteration) loại bỏ từ chối khỏi mô hình transformer mà không cần fine-tune tốn kém.",
+        tags: ["PyTorch", "OpenCV", "Heretic LLM", "Hugging Face", "CNN/Transformers"],
+        link: "https://github.com/DaoHuuTrong2404/autonomous-ai-agents-workspace"
+      },
+      {
+        id: "algorithms",
+        title: "Competitive C++ & Algorithms",
+        badge: "ACADEMIC BASE",
+        color: 0xff8c00,
+        emissive: 0xd90429,
+        desc: "Chinh phục cấu trúc dữ liệu giải thuật nâng cao (Graph, Dynamic Programming, Segment Tree) tại Đại học Cần Thơ (CTU - K52), tối ưu thuật toán tốc độ microsecond trên C++20.",
+        tags: ["C++20", "Algorithms", "Data Structures", "CTU K52", "High-Performance"],
+        link: "https://github.com/DaoHuuTrong2404/cpp-data-structures-and-algorithms"
+      },
+      {
+        id: "creative-3d",
+        title: "Creative 3D Web & Motion Design",
+        badge: "EXPERIENTIAL WEB",
+        color: 0x00df89,
+        emissive: 0x00b4d8,
+        desc: "Thiết kế giao diện 3D không gian tương tác WebGL với Three.js, React Three Fiber, hoạt ảnh chuyển động 60fps physics spring bằng GSAP 3, và hệ thống dựng video viral tự động Remotion.",
+        tags: ["Three.js", "WebGL", "GSAP 3", "Remotion Video", "Physics Spring"],
+        link: "https://github.com/DaoHuuTrong2404"
+      }
+    ];
+
+    const interactiveCubes = [];
+    const orbitRadius = 4.8;
+
+    modulesData.forEach((data, index) => {
+      const angle = (index / modulesData.length) * Math.PI * 2;
+      const cubeGroup = new THREE.Group();
+
+      // Rounded Box Geometry
+      const boxGeo = new THREE.BoxGeometry(0.9, 0.9, 0.9);
+      const boxMat = new THREE.MeshStandardMaterial({
+        color: 0x101422,
+        emissive: data.emissive,
+        emissiveIntensity: 0.5,
+        roughness: 0.15,
+        metalness: 0.85
+      });
+      const boxMesh = new THREE.Mesh(boxGeo, boxMat);
+      cubeGroup.add(boxMesh);
+
+      // Glowing Neon Wireframe
+      const edgeGeo = new THREE.EdgesGeometry(boxGeo);
+      const edgeMat = new THREE.LineBasicMaterial({ color: data.color, linewidth: 2 });
+      const edgeLines = new THREE.LineSegments(edgeGeo, edgeMat);
+      cubeGroup.add(edgeLines);
+
+      // Small Orbiting Halo Ring
+      const ringGeo = new THREE.TorusGeometry(0.7, 0.02, 16, 64);
+      const ringMat = new THREE.MeshBasicMaterial({ color: data.color, transparent: true, opacity: 0.4 });
+      const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+      ringMesh.rotation.x = Math.PI / 2;
+      cubeGroup.add(ringMesh);
+
+      cubeGroup.position.set(Math.cos(angle) * orbitRadius, (index % 2 === 0 ? 0.6 : -0.6), Math.sin(angle) * orbitRadius);
+      cubeGroup.userData = {
+        data: data,
+        baseAngle: angle,
+        baseY: cubeGroup.position.y,
+        origScale: 1.0,
+        targetScale: 1.0,
+        mesh: boxMesh,
+        color: data.color
+      };
+
+      scene.add(cubeGroup);
+      interactiveCubes.push(cubeGroup);
+    });
+
+    // --- 7. Star Particles & Cyber Energy Field ---
+    const starCount = 1200;
+    const starGeo = new THREE.BufferGeometry();
+    const starPos = new Float32Array(starCount * 3);
+
+    for (let i = 0; i < starCount * 3; i += 3) {
+      starPos[i] = (Math.random() - 0.5) * 60;
+      starPos[i + 1] = (Math.random() - 0.5) * 60;
+      starPos[i + 2] = (Math.random() - 0.5) * 60;
+    }
+    starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+
+    const starMat = new THREE.PointsMaterial({
+      color: 0x00f0ff,
+      size: 0.08,
+      transparent: true,
+      opacity: 0.6
+    });
+    const starField = new THREE.Points(starGeo, starMat);
+    scene.add(starField);
+
+    // --- 8. Raycasting & Mouse Interaction ---
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    let hoveredCube = null;
+    const tooltipEl = document.getElementById('hover-tooltip');
+
+    window.addEventListener('pointermove', (e) => {
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+      // Update 2D Tooltip position
+      tooltipEl.style.left = `${e.clientX}px`;
+      tooltipEl.style.top = `${e.clientY}px`;
+    });
+
+    function checkRaycast() {
+      raycaster.setFromCamera(mouse, camera);
+      const meshesToTest = interactiveCubes.map(g => g.userData.mesh);
+      const intersects = raycaster.intersectObjects(meshesToTest);
+
+      if (intersects.length > 0) {
+        const hitMesh = intersects[0].object;
+        const hitGroup = hitMesh.parent;
+
+        if (hoveredCube !== hitGroup) {
+          if (hoveredCube) resetCube(hoveredCube);
+          hoveredCube = hitGroup;
+          highlightCube(hoveredCube);
+          AudioEngine.hover();
+
+          // Show tooltip
+          tooltipEl.textContent = hitGroup.userData.data.title;
+          tooltipEl.style.color = `#${hitGroup.userData.data.color.toString(16).padStart(6, '0')}`;
+          tooltipEl.style.borderColor = tooltipEl.style.color;
+          tooltipEl.style.opacity = '1';
+        }
+      } else {
+        if (hoveredCube) {
+          resetCube(hoveredCube);
+          hoveredCube = null;
+          tooltipEl.style.opacity = '0';
+        }
+      }
+    }
+
+    function highlightCube(cubeGroup) {
+      gsap.to(cubeGroup.scale, { x: 1.35, y: 1.35, z: 1.35, duration: 0.35, ease: 'back.out(2)' });
+      cubeGroup.userData.mesh.material.emissiveIntensity = 1.3;
+    }
+
+    function resetCube(cubeGroup) {
+      gsap.to(cubeGroup.scale, { x: 1.0, y: 1.0, z: 1.0, duration: 0.25, ease: 'power2.out' });
+      cubeGroup.userData.mesh.material.emissiveIntensity = 0.5;
+    }
+
+    // Modal Interaction
+    const modalEl = document.getElementById('info-modal');
+    const modalBadge = document.getElementById('modal-badge');
+    const modalTitle = document.getElementById('modal-title');
+    const modalDesc = document.getElementById('modal-desc');
+    const modalTags = document.getElementById('modal-tags');
+    const modalLink = document.getElementById('modal-link');
+    const modalClose = document.getElementById('modal-close');
+
+    window.addEventListener('click', (e) => {
+      // If modal is open and user clicks overlay, close it
+      if (e.target === modalEl) {
+        closeModal();
+        return;
+      }
+
+      if (hoveredCube) {
+        const d = hoveredCube.userData.data;
+        openModal(d);
+        AudioEngine.click();
+      }
+    });
+
+    function openModal(data) {
+      modalBadge.textContent = data.badge;
+      const colorHex = `#${data.color.toString(16).padStart(6, '0')}`;
+      modalBadge.style.color = colorHex;
+      modalBadge.style.background = `${colorHex}22`;
+      modalTitle.textContent = data.title;
+      modalDesc.textContent = data.desc;
+      modalLink.href = data.link;
+
+      modalTags.innerHTML = '';
+      data.tags.forEach(t => {
+        const tag = document.createElement('span');
+        tag.className = 'modal-tag';
+        tag.textContent = t;
+        modalTags.appendChild(tag);
+      });
+
+      modalEl.classList.add('open');
+      controls.autoRotate = false;
+    }
+
+    function closeModal() {
+      modalEl.classList.remove('open');
+      controls.autoRotate = document.getElementById('btn-autorotate').classList.contains('active');
+    }
+
+    modalClose.addEventListener('click', closeModal);
+
+    // --- 9. UI Buttons Handlers ---
+    // Audio Toggle
+    const btnAudio = document.getElementById('btn-audio');
+    btnAudio.addEventListener('click', () => {
+      AudioEngine.enabled = !AudioEngine.enabled;
+      btnAudio.textContent = AudioEngine.enabled ? '🔊 Sound: ON' : '🔈 Sound: OFF';
+      btnAudio.classList.toggle('active', AudioEngine.enabled);
+      if (AudioEngine.enabled) AudioEngine.beep(880, 'sine', 0.1);
+    });
+
+    // Auto-Rotate Toggle
+    const btnAutoRotate = document.getElementById('btn-autorotate');
+    btnAutoRotate.addEventListener('click', () => {
+      controls.autoRotate = !controls.autoRotate;
+      btnAutoRotate.classList.toggle('active', controls.autoRotate);
+      AudioEngine.beep(controls.autoRotate ? 660 : 440, 'triangle', 0.1);
+    });
+
+    // Particle Burst Action
+    const btnBurst = document.getElementById('btn-burst');
+    btnBurst.addEventListener('click', () => {
+      AudioEngine.burst();
+      // Animate core scale burst
+      gsap.fromTo(coreGroup.scale, 
+        { x: 0.8, y: 0.8, z: 0.8 }, 
+        { x: 1.4, y: 1.4, z: 1.4, duration: 0.4, yoyo: true, repeat: 1, ease: 'power2.out' }
+      );
+      // Flash point light
+      gsap.fromTo(pointLightCore, 
+        { intensity: 6.0 }, 
+        { intensity: 2.5, duration: 0.8, ease: 'power2.out' }
+      );
+      // Orbiting cubes wave
+      interactiveCubes.forEach((c, i) => {
+        gsap.to(c.position, {
+          y: c.userData.baseY + (i % 2 === 0 ? 1.5 : -1.5),
+          duration: 0.5,
+          yoyo: true,
+          repeat: 1,
+          ease: 'power2.out',
+          delay: i * 0.08
+        });
+      });
+    });
+
+    // --- 10. Animation Loop ---
+    let clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const elapsedTime = clock.getElapsedTime();
+
+      // Rotate AI Core
+      innerMesh.rotation.y = elapsedTime * 0.6;
+      innerMesh.rotation.x = elapsedTime * 0.3;
+      wireMesh.rotation.y = -elapsedTime * 0.4;
+      outerMesh.rotation.y = elapsedTime * 0.25;
+      cageMesh.rotation.x = -elapsedTime * 0.2;
+
+      // Orbit the interactive cubes around core
+      interactiveCubes.forEach((cube, i) => {
+        const curAngle = cube.userData.baseAngle + elapsedTime * 0.2;
+        cube.position.x = Math.cos(curAngle) * orbitRadius;
+        cube.position.z = Math.sin(curAngle) * orbitRadius;
+        cube.position.y = cube.userData.baseY + Math.sin(elapsedTime * 1.5 + i) * 0.25;
+
+        // Rotate individual cubes on their own axes
+        cube.rotation.x += 0.01;
+        cube.rotation.y += 0.015;
+      });
+
+      // Slowly drift starfield
+      starField.rotation.y = elapsedTime * 0.02;
+
+      checkRaycast();
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    // --- 11. Responsive Resize ---
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    });
+  </script>
+</body>
+</html>
