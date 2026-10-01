@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 850 140" width="100%" height="100%">
+  <defs>
+    <linearGradient id="pBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#090614" />
+      <stop offset="50%" stop-color="#140E2A" />
+      <stop offset="100%" stop-color="#08151D" />
+    </linearGradient>
+
+    <linearGradient id="pBorder" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#7928CA" />
+      <stop offset="50%" stop-color="#00F5D4" />
+      <stop offset="100%" stop-color="#00FF87" />
+    </linearGradient>
+
+    <linearGradient id="pText" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00F5D4" />
+      <stop offset="50%" stop-color="#D8B4FE" />
+      <stop offset="100%" stop-color="#00FF87" />
+    </linearGradient>
+
+    <filter id="pGlow" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <style>
+    .p-title { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; font-weight: 800; font-size: 19px; letter-spacing: -0.01em; }
+    .p-desc { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; font-size: 13px; fill: #CBD5E1; }
+    .btn-lbl { font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 11.5px; }
+  </style>
+
+  <!-- Card Background -->
+  <rect x="5" y="5" width="840" height="130" rx="16" fill="url(#pBg)" stroke="url(#pBorder)" stroke-width="2" />
+
+  <!-- Corner Brackets -->
+  <path d="M 14 26 L 14 14 L 26 14" fill="none" stroke="#00F5D4" stroke-width="2" />
+  <path d="M 836 26 L 836 14 L 824 14" fill="none" stroke="#7928CA" stroke-width="2" />
+  <path d="M 14 114 L 14 126 L 26 126" fill="none" stroke="#7928CA" stroke-width="2" />
+  <path d="M 836 114 L 836 126 L 824 126" fill="none" stroke="#00FF87" stroke-width="2" />
+
+  <!-- Content -->
+  <g transform="translate(30, 24)">
+    <!-- Title -->
+    <text x="0" y="20" fill="url(#pText)" class="p-title" filter="url(#pGlow)">
+      🎮 KHÔNG GIAN 3D TƯƠNG TÁC THỜI GIAN THỰC (THREE.JS &amp; WEBGL)
+    </text>
+
+    <!-- Subtitle -->
+    <text x="0" y="44" class="p-desc">
+      🖱️ Dùng chuột kéo xoay 360° • 🔍 Cuộn zoom in/out • 🔊 Web Audio synthesizer • 🐾 Trợ lý Cyber Neko Meow
+    </text>
+
+    <!-- Interactive Badges Preview -->
+    <g transform="translate(0, 58)">
+      <!-- Button 1 -->
+      <rect x="0" y="0" width="260" height="32" rx="8" fill="rgba(0, 245, 212, 0.15)" stroke="#00F5D4" stroke-width="1.2" />
+      <text x="130" y="20" text-anchor="middle" fill="#00F5D4" class="btn-lbl">🚀 KHÁM PHÁ PORTFOLIO 3D LIVE ↗</text>
+
+      <!-- Button 2 -->
+      <g transform="translate(275, 0)">
+        <rect x="0" y="0" width="220" height="32" rx="8" fill="rgba(121, 40, 202, 0.22)" stroke="#9D4EDD" stroke-width="1.2" />
+        <text x="110" y="20" text-anchor="middle" fill="#D8B4FE" class="btn-lbl">🐾 CLICK MÈO NGHE MEOW ↗</text>
+      </g>
+
+      <!-- URL text -->
+      <g transform="translate(510, 0)">
+        <rect x="0" y="0" width="280" height="32" rx="8" fill="rgba(255, 255, 255, 0.05)" stroke="rgba(255, 255, 255, 0.15)" stroke-width="1" />
+        <text x="140" y="20" text-anchor="middle" fill="#00FF87" class="btn-lbl">🌐 daohuutrong2404.github.io</text>
+      </g>
+    </g>
+  </g>
+</svg>
